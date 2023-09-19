@@ -24,8 +24,8 @@ class ExecutionBot(Management):
                  host=None, bot_id=None):
 
         super(ExecutionBot, self).__init__(strategy, starting_money,
-                                           market_event_securities, market_event_queue, securities,
-                                           host, bot_id)
+                                        market_event_securities, market_event_queue, securities,
+                                        host, bot_id)
 
         # # Subscription to order book in order to passively send orders
         # self.kickoff()
@@ -46,12 +46,12 @@ class ExecutionBot(Management):
     #     self.logger.info(f'Connection closed!')
 
     def start_task(self, sym, action, size):
-        # self.start()
+        #self.start()
         # give some time for agent to receive queue in channel since it is 'direct' for now
-
+        
         # while not self.mid_market[sym]:
         #     sleep(0.01)
-
+        
         self.stat = {
             'strategy': self.strategy,
             'sym': sym,
@@ -67,7 +67,7 @@ class ExecutionBot(Management):
         self.stat['time_t'] = time_t
         self.stat['slices'] = slices
         self.stop(self.stat, log=True)
-
+    
     def aggressive_orders(self, qty, action, exec_t=2, log=True):
         sym = self.securities[0]
 
@@ -105,15 +105,12 @@ class ExecutionBot(Management):
                     # --------------------debug-------------------------
                     level_size = self.market_dict[sym][level][book_side + 'Size']
                     level_price = self.market_dict[sym][level][book_side + 'Price']
-                    print(
-                        f'level is {level}, size in this level is {level_size}, price in this level is {level_price}')
+                    print(f'level is {level}, size in this level is {level_size}, price in this level is {level_price}')
                     # --------------------debug-----------------------
-                    size_level = min(
-                        qty-size, self.market_dict[sym][level][book_side + 'Size'])
+                    size_level = min(qty-size, self.market_dict[sym][level][book_side + 'Size'])
                     size += int(size_level)
 
-                    order_prices.append(
-                        self.market_dict[sym][level][book_side + 'Price'])
+                    order_prices.append(self.market_dict[sym][level][book_side + 'Price'])
                     order_qty.append(size_level)
                     # -------------------debug-------------------
                     print(f'pty is {qty}, size_leve is {size_level}')
@@ -128,7 +125,7 @@ class ExecutionBot(Management):
             print(order_prices)
             print(order_qty)
             # ----------------debug----------------
-
+            
             # send orders
             orders = []
             for p, q in zip(order_prices, order_qty):
@@ -148,11 +145,11 @@ class ExecutionBot(Management):
                 self.send_order(order)
                 logging.info(f"Aggressive order sent: \n"
                              f"\t {order['symb']}: "
-                             f"{order['orderNo']} | "
-                             f"{order['side']} | "
-                             f"{order['origQty']} | "
-                             f"{order['remainingQty']} | "
-                             f"{order['price']}")
+                                     f"{order['orderNo']} | "
+                                     f"{order['side']} | "
+                                     f"{order['origQty']} | "
+                                     f"{order['remainingQty']} | "
+                                     f"{order['price']}")
 
                 orders.append(order)
                 self.internalID += 1
@@ -161,13 +158,13 @@ class ExecutionBot(Management):
             qty = 0
 
             for order in orders:
-
+                
                 in_id = order["orderNo"]
 
                 # make sure all orders are acked on matching enginee
                 # while in_id in self.inIds_to_orders_sent:
                 #     sleep(0.001)
-                # print(f'waiting for pending orders...')
+                    # print(f'waiting for pending orders...')
 
                 # cancel only if the order is not fully filled
                 # if in_id in self.inIds_to_orders_confirmed:
@@ -191,8 +188,7 @@ class ExecutionBot(Management):
                     qty += order['remainingQty']
 
                     # increment pv by filled qty
-                    pv += order['price'] * \
-                        (order['origQty'] - order['remainingQty'])
+                    pv += order['price'] * (order['origQty'] - order['remainingQty'])
 
                 # increment pv by fully filled amount
                 else:
@@ -210,7 +206,7 @@ class ExecutionBot(Management):
         try:
             cost_qty = pv / (qty_target - qty) - benchmark_price*1.
         except:
-            cost_qty = 999.99
+            cost_qty=999.99
             benchmark_price = 999.99
         if action == 'buy':
             cost_qty *= -1
@@ -248,7 +244,7 @@ class ExecutionBot(Management):
         # benchmark price
         benchmark_price = self.mid_market[sym]
         benchmark_vwap = self.vwap[sym]
-
+        
         # modify_3
         pre_vwap = benchmark_vwap
 
@@ -275,14 +271,12 @@ class ExecutionBot(Management):
             # setting p as L1 price is not reasonable -> may lead to the fact that too much order cancelled
             # p = self.market_dict[sym]['L1'][book_side + 'Price']
 
-            # Modify_3
+            ## Modify_3
             if action == 'buy':
-                # expand_rate = 1.2 if vwap decrease
-                expand_rate = 1.2 if self.vwap[sym] - pre_vwap < 0 else 1
+                expand_rate = 1.2 if self.vwap[sym] - pre_vwap < 0 else 1 #expand_rate = 1.2 if vwap decrease
             else:
-                # expand_rate = 1.2 if vwap decrease
-                expand_rate = 1 if self.vwap[sym] - pre_vwap < 0 else 1.2
-
+                expand_rate = 1 if self.vwap[sym] - pre_vwap < 0 else 1.2 #expand_rate = 1.2 if vwap decrease
+            
             # ----debug----
             print(f'pre_vwap: {pre_vwap}, current vwap: {self.vwap[sym]}')
             print(f'expand_rate is {expand_rate}')
@@ -291,14 +285,15 @@ class ExecutionBot(Management):
             pre_vwap = self.vwap[sym]
             target_q = int(qty / (n_slices - i) * expand_rate)
             # target_q: the total qty we want to fill in this slice
-
+            
             # qty_slice: possible unfilled size in the previous slice
             # set qty_slice = 0 casue qty_slice has been absorbed by target_q
             qty_slice = 0
             # ----------- Modify_2 end ------------
 
-            # ----------- Modify_2 begin ------------
 
+            # ----------- Modify_2 begin ------------
+            
             # search the price level that covers all qty
             book_levels = self.market_event_queue.copy()
             size = 0
@@ -312,24 +307,21 @@ class ExecutionBot(Management):
                     # --------------------debug-------------------------
                     level_size = self.market_dict[sym][level][book_side + 'Size']
                     level_price = self.market_dict[sym][level][book_side + 'Price']
-                    print(
-                        f'level is {level}, size in this level is {level_size}, price in this level is {level_price}')
+                    print(f'level is {level}, size in this level is {level_size}, price in this level is {level_price}')
                     # --------------------debug-----------------------
 
-                    size_level = min(
-                        target_q - size, self.market_dict[sym][level][book_side + 'Size'])
+                    size_level = min(target_q - size, self.market_dict[sym][level][book_side + 'Size'])
                     size += int(size_level)
 
-                    order_prices.append(
-                        self.market_dict[sym][level][book_side + 'Price'])
+                    order_prices.append(self.market_dict[sym][level][book_side + 'Price'])
                     order_qty.append(size_level)
                 except Exception:
                     print(f'{sym} dont have level {level} price')
                     pass
-
+            
             # note that it's possible that size is finally less than target_q
             # cause the whole book might be insufficient
-
+            
             # ----------------debug----------------
             print(order_prices)
             print(order_qty)
@@ -349,7 +341,7 @@ class ExecutionBot(Management):
                          'AON': 0,
                          'strategy': self.strategy,
                          'orderNo': self.internalID
-                         }
+                        }
 
                 self.send_order(order)
                 logging.info(f"Slice {i+1} - twap order sent: \n"
@@ -364,6 +356,7 @@ class ExecutionBot(Management):
                 self.internalID += 1
             # ----------- Modify_2 end ------------
 
+
             # logging.info(f'Giving {exec_t} seconds for limit orders to be filled...')
             # sleep(exec_t)
 
@@ -376,7 +369,7 @@ class ExecutionBot(Management):
 
                 # while in_id in self.inIds_to_orders_sent:
                 #     sleep(0.001)
-                # print(f'waiting for pending orders...')
+                    # print(f'waiting for pending orders...')
 
                 # cancel only if the order is not fully filled
                 if in_id in self.inIds_to_orders_confirmed:
@@ -396,8 +389,7 @@ class ExecutionBot(Management):
                     qty_slice += order['remainingQty']
 
                     # increment pv by filled amount
-                    pv += order['price'] * \
-                        (order['origQty'] - order['remainingQty'])
+                    pv += order['price'] * (order['origQty'] - order['remainingQty'])
 
                 # Modify_1: don't do aggressive_roders at the end of every slice
                 # pv_slice, qty_slice = self.aggressive_orders(qty_slice, action)
@@ -465,28 +457,21 @@ class ExecutionBot(Management):
 
         return penalty, pv_final
 
-
 if __name__ == "__main__":
     # market_event_securities = ["GEH0:MBO","GEM2:MBO","GEU0:MBO"]
-    myargparser = argparse.ArgumentParser()
-    myargparser.add_argument('--strategy', type=str,
-                             const="TWAP", nargs='?', default="TWAP")
-    myargparser.add_argument('--symbol', type=str,
-                             const="ZNH0:MBO", nargs='?', default="ZBH0:MBO")
-    myargparser.add_argument('--action', type=str,
-                             const="buy", nargs='?', default="buy")
-    myargparser.add_argument(
-        '--size', type=int, const=1000, nargs='?', default=100)
-    myargparser.add_argument('--maxtime', type=int,
-                             const=120, nargs='?', default=120)
+    myargparser=argparse.ArgumentParser()
+    myargparser.add_argument('--strategy', type=str, const="TWAP", nargs='?', default="TWAP")
+    myargparser.add_argument('--symbol',type=str,const="ZNH0:MBO",nargs='?',default="ZBH0:MBO")
+    myargparser.add_argument('--action',type=str,const="buy",nargs='?',default="buy")
+    myargparser.add_argument('--size',type=int,const=1000,nargs='?',default=100)
+    myargparser.add_argument('--maxtime',type=int,const=120,nargs='?',default=120)
     myargparser.add_argument('--username', type=str, default='test')
     myargparser.add_argument('--password', type=str, default='test')
-    myargparser.add_argument('--bot_id', type=str,
-                             const='text', nargs='?', default='text')
-    args = myargparser.parse_args()
-
+    myargparser.add_argument('--bot_id', type=str, const='text', nargs='?', default='text')
+    args=myargparser.parse_args()
+    
     market_event_securities = [args.symbol]
-    market_event_queue = ["L1", "L2", "L3", "L4", "L5"]
+    market_event_queue = ["L1", "L2","L3","L4","L5"]
     securities = market_event_securities
     host = "localhost"
     strategy = args.strategy
@@ -494,19 +479,17 @@ if __name__ == "__main__":
     starting_money = 1000000000.0
 
     start_t = time.time()
-    exec_bot = ExecutionBot(strategy, starting_money, market_event_securities,
-                            market_event_queue, securities, host, bot_id)
+    exec_bot = ExecutionBot(strategy, starting_money, market_event_securities, market_event_queue, securities, host, bot_id)
     exec_bot.start_task(args.symbol, args.action, args.size)
 
     pv, qty, num_slices = 0, 0, 10
     # if strategy == 'TWAP':
     #     pv, qty = exec_bot.twap_orders(args.size, args.action, num_slices, int(args.maxtime/num_slices))
-    pv, qty = exec_bot.twap_orders(
-        args.size, args.action, num_slices, int(args.maxtime/num_slices))
+    pv, qty = exec_bot.twap_orders(args.size, args.action, num_slices, int(args.maxtime/num_slices))
 
     end_t = time.time()
     exec_bot.task_complete(pv, qty, end_t-start_t, num_slices)
-    #exec_bot.exit()
+    sys.exit()
 
 # looks like we have hung thread
 # argparse for the arguments - inclusive symbol
